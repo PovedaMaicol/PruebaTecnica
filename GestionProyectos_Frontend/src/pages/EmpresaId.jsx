@@ -11,7 +11,7 @@ const EmpresaId = () => {
         const url = `http://localhost:3001/api/empresas/${id}`;
         fetchData(url);
         console.log('la empresa es:', empresaId)
-    }, [empresaId]);
+    }, [id]);
   return (
     <div>EmpresaId</div>
   )

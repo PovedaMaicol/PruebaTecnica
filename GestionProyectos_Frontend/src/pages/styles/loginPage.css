@@ -1,0 +1,18 @@
+.padre {
+    width: 100vw;
+    height: 100vh;
+
+
+    display: flex;
+    align-items: center;
+}
+
+.contenedor {
+
+    margin: 0 auto;
+    height: 50vh;
+    width: 80vw;
+    display: flex;
+    flex-direction: column;
+    justify-content:space-around;
+}
