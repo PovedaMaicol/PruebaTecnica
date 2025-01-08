@@ -1,0 +1,253 @@
+const mongoose = require('mongoose')
+const ObjectId = mongoose.Types.ObjectId
+const jwt = require('jsonwebtoken')
+const empresasRouter = require('express').Router()
+
+
+const Empresa = require('../models/empresa')
+const User = require('../models/user')
+const Ticket = require('../models/ticket')
+const Historia = require('../models/historia')
+
+const middleware = require('../utils/middleware')
+const {response, request} = require('express')
+const { error } = require('../utils/logger')
+
+const getTokenFrom = request => {
+    const authorization = request.get('authorization')
+    if (authorization && authorization.startsWith('Bearer ')) {
+      return authorization.replace('Bearer ', '')
+    }
+    return null
+  }
+
+// obtener empresas
+empresasRouter.get('/', async (request, response) => {
+    const empresas = await Empresa.find({}).populate('user', { username: 1, name: 1 })
+    response.json(empresas)
+})
+
+// obtener empresa por id
+empresasRouter.get('/:id', async (request, response) => {
+    const empresa = await Empresa.findById(request.params.id)
+    .populate({
+        path: 'historias', //mostrar historias
+    populate: {
+        path: 'tickets', //mostrar tickets
+        model: 'Ticket' // especifico el modelo relacionado
+    }}
+    )
+    if (empresa) {
+        response.json(empresa)
+    } else {
+        response.status(404).end()
+    }
+})
+
+// añadir empresa
+empresasRouter.post('/', middleware.userExtractor, async (request, response) => {
+    
+    try {
+        const {name, city} = request.body
+
+        if (!name || !city) {
+            return response.status(400).json({ error: 'name and city are required' })
+        }
+        const user = request.user;
+        console.log('el user es', user)
+
+        if(!user) {
+            return response.status(401).json({ error: 'token missing or invalid'})
+        }
+        const empresa = new Empresa({
+            name: name,
+            city: city,
+            user: user._id
+        })  
+
+        const savedEmpresa = await empresa.save()
+        user.empresas = user.empresas.concat(savedEmpresa._id)
+        await user.save()
+        response.status(201).json(savedEmpresa)
+    } catch (error) {
+        console.error(error)
+        response.status(500).json({ error: 'something went wrong' })
+    
+   
+    }
+})
+
+// eliminar empresa
+empresasRouter.delete('/:id', middleware.userExtractor, async (request, response) => {
+
+    try {
+        const user = request.user;
+        const empresaId = request.params.id
+
+        console.log('el user es', user)
+        console.log('la empresa es', empresaId)
+
+        if(!empresaId) {
+            return response.status(400).json({ error: 'empresaId is required' })
+        }
+
+        const empresa = await Empresa.findById(empresaId)
+        if(!empresa) {
+            return response.status(404).json({ error: 'empresa not found' })
+        }
+        if(!user) {
+            return response.status(401).json({ error: 'token missing or invalid'})
+        }
+
+          // valido si el usuario es propietario del blog
+        if(empresa.user.toString() !== user.id.toString()){
+        return response.status(403).json({ error: 'forbidden' });
+        }
+
+        // eliminar la empresa
+        await Empresa.findByIdAndDelete(request.params.id)
+        response.status(204).end()
+    } catch {
+        console.error(error);
+        response.status(500).json({ error: 'An error occurred while deleting the empresa' })
+    }
+    
+})
+
+
+// Agregar una historia
+
+empresasRouter.post('/:empresaId/historias', async (request, response) => {
+    const { empresaId } = request.params;
+    const { activity } = request.body;
+
+    if (!activity) {
+        return response.status(400).json({ error: 'Activity is required'});
+    }
+
+    try {
+        //verificar si la empresa existe
+        const empresa = await Empresa.findById(empresaId);
+        if (!empresa) {
+            return response.status(404).json({ error: 'empresa not found'})
+        }
+
+        // Crear la nueva historia
+        const newHistoria = new Historia({
+        activity,
+        empresaID: empresaId,
+        });
+
+        const savedHistoria = await newHistoria.save();
+
+        // Actualizar el array de historias en la empresa
+        empresa.historias = empresa.historias.concat(savedHistoria._id);
+        await empresa.save();
+        response.status(201).json(savedHistoria);
+
+        } catch (error) {
+        console.error('Error adding historia:', error);
+        response.status(500).json({ error: 'An error occurred while adding the historia' });
+        
+        }
+
+
+})
+
+// Crear un nuevo ticket
+empresasRouter.post('/:empresaId/historias/:historiaId/tickets', async (request, response) => {
+
+    const { empresaId, historiaId } = request.params;
+    const { titulo, descripcion, estado } = request.body;
+  
+    if (!titulo) {
+      return response.status(400).json({ error: 'Titulo is required' });
+    }
+  
+    try {
+      // Verificar si la historia existe y pertenece a la empresa
+      const historia = await Historia.findById(historiaId);
+      if (!historia || historia.empresaID.toString() !== empresaId) {
+        return response.status(404).json({ error: 'Historia not found for this empresa' });
+      }
+  
+      // Crear el nuevo ticket
+      const newTicket = new Ticket({
+        titulo,
+        descripcion,
+        estado,
+        historiaID: historiaId,
+        historial: [{ estado: estado || 'activo' }] // Historial inicial del ticket
+      });
+  
+      const savedTicket = await newTicket.save();
+  
+      // Agregar el ticket a la empresa
+      historia.tickets = historia.tickets.concat(savedTicket._id);
+      await historia.save();
+  
+      response.status(201).json(savedTicket);
+    } catch (error) {
+      console.error('Error creating ticket:', error);
+      response.status(500).json({ error: 'An error occurred while creating the ticket' });
+    }
+  });
+
+
+// Editar ticket
+empresasRouter.put('/:empresaId/tickets/:ticketId', async (request, response) => {
+    const { empresaId, ticketId } = request.params;
+    const { titulo, descripcion, estado } = request.body;
+
+    try {
+        const empresa = await Empresa.findById(empresaId).populate('tickets');
+
+        if (!empresa) {
+            return response.status(404).json({ error: 'Empresa not found'});
+        }
+
+        const ticket = await Ticket.findById(ticketId);
+        if (!ticket) {
+            return response.status(404).json({ error: 'Ticket not found'})
+        }
+
+        // Actualizar los campos del ticket
+        if (titulo) ticket.titulo = titulo;
+        if (descripcion) ticket.descripcion = descripcion;
+        if (estado) {
+        ticket.estado = estado;
+        ticket.historial.push({ estado }); // Registrar el cambio de estado
+        }
+
+        const updatedTicket = await ticket.save();
+        response.status(200).json(updatedTicket)
+        } catch (error) {
+        console.error('Error updating ticket:', error);
+        response.status(500).json({ error: 'An error occurred while updating the ticket' });
+    }
+})
+
+
+// Eliminar un ticket
+empresasRouter.delete('/:empresaId/tickets/:ticketId', async (request, response) => {
+    const { empresaId, ticketId } = request.params;
+
+        try {
+        const empresa = await Empresa.findById(empresaId);
+        if (!empresa) {
+        return response.status(404).json({ error: 'Empresa not found' });
+        }
+  
+        // Eliminar el ticket de la colección y de la lista de la empresa
+        await Ticket.findByIdAndDelete(ticketId);
+        empresa.tickets = empresa.tickets.filter(t => t.toString() !== ticketId);
+        await empresa.save();
+  
+        response.status(204).end();
+        } catch (error) {
+        console.error('Error deleting ticket:', error);
+        response.status(500).json({ error: 'An error occurred while deleting the ticket' });
+    }
+  });
+  
+module.exports = empresasRouter
