@@ -210,8 +210,46 @@ empresasRouter.post('/:empresaId/historias', async (request, response) => {
 
 })
 
+// Editar historia
+empresasRouter.put('/:empresaId/historias/:historiaId', async (request, response) => {
+    const { empresaId, historiaId } = request.params;
+    const { activity } = request.body;
 
-// eliminar historia
+    if (!activity) {
+        return response.status(400).json({ error: 'Activity is required' });
+    }
+
+    try {
+        // Verificar si la empresa existe
+        const empresa = await Empresa.findById(empresaId);
+        if (!empresa) {
+            return response.status(404).json({ error: 'Empresa not found' });
+        }
+
+        // Verificar si la historia existe
+        const historia = await Historia.findById(historiaId);
+        if (!historia) {
+            return response.status(404).json({ error: 'Historia not found' });
+        }
+
+        // Verificar si la historia pertenece a la empresa
+        if (historia.empresaID.toString() !== empresaId) {
+            return response.status(400).json({ error: 'Historia does not belong to this empresa' });
+        }
+
+        // Actualizar los campos de la historia
+        historia.activity = activity;
+
+        const updatedHistoria = await historia.save();
+        response.status(200).json(updatedHistoria);
+    } catch (error) {
+        console.error('Error updating historia:', error);
+        response.status(500).json({ error: 'An error occurred while updating the historia' });
+    }
+});
+
+
+
 // Eliminar una historia
 empresasRouter.delete('/:empresaId/historias/:historiaId', async (request, response) => {
     const { empresaId, historiaId } = request.params;

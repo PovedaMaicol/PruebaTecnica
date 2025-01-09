@@ -75,6 +75,13 @@ const addHistory = async (id, historia) => {
   }
 };
 
+  // update history
+const updateHistory = async (empresaId, historiaId, newActivity) => {
+    const response = await axios.put(`${base}${url}/${empresaId}/historias/${historiaId}`, { activity: newActivity });
+    return response.data;
+};
+  
+  // delete history
 const deleteHistory = async(empresaId, historiaId) => {
   try {
     const response = await axios.delete(`${base}${url}/${empresaId}/historias/${historiaId}`)
@@ -86,4 +93,4 @@ const deleteHistory = async(empresaId, historiaId) => {
   }
 }
 
-        export default { getAll, create, update, destroy, addHistory, deleteHistory, setToken }
+        export default { getAll, create, update, destroy, addHistory, updateHistory, deleteHistory, setToken }

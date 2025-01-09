@@ -10,10 +10,10 @@ const EmpresaId = () => {
   const [error, setError] = useState(null);
   const [isVisible, setIsVisible] = useState(false); // Controla la visibilidad del formulario
   const [activity, setActivity] = useState('');
+  const [editingHistoryId, setEditingHistoryId] = useState(null); // Para saber si estamos editando una historia
 
   const base = import.meta.env.VITE_API_URL;
   const url = '/api/empresas';
-  console.log('en base ahi', base);
 
   // Cargar la empresa al cargar el componente
   const fetchEmpresa = async () => {
@@ -23,11 +23,9 @@ const EmpresaId = () => {
         throw new Error('No se encontró la empresa');
       }
       const data = await response.json();
-      console.log('Datos de la empresa:', data);
       setEmpresaId(data);
       setLoading(false);
     } catch (error) {
-      console.error('Error al obtener la empresa:', error);
       setError('Error al cargar la empresa.');
       setLoading(false);
     }
@@ -41,33 +39,36 @@ const EmpresaId = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const nuevaHistoria = {
-      activity,
-    };
+    const nuevaHistoria = { activity };
 
     try {
-      const response = await empresaService.addHistory(id, nuevaHistoria); // Agregar historia
-      const updatedHistorias = [...empresaId.historias, response]; // Actualizar solo las historias
-      setEmpresaId({ ...empresaId, historias: updatedHistorias }); // Mantener el resto de los datos de la empresa
-      setActivity('');
-      setIsVisible(false);
+      if (editingHistoryId) {
+        // Si estamos editando una historia
+        await empresaService.updateHistory(id, editingHistoryId, activity);
+        const updatedHistorias = empresaId.historias.map((historia) =>
+          historia._id === editingHistoryId ? { ...historia, activity } : historia
+        );
+        setEmpresaId({ ...empresaId, historias: updatedHistorias });
+        setEditingHistoryId(null); // Reseteamos el ID de la historia que estamos editando
+      } else {
+        // Si estamos agregando una nueva historia
+        const response = await empresaService.addHistory(id, nuevaHistoria);
+        const updatedHistorias = [...empresaId.historias, response];
+        setEmpresaId({ ...empresaId, historias: updatedHistorias });
+      }
+
+      setActivity(''); // Limpiar el campo de actividad
+      setIsVisible(false); // Ocultar el formulario
     } catch (err) {
-      console.error('Error al agregar la historia:', err.message);
-      setError('No se pudo agregar la historia. Inténtalo de nuevo.');
+      setError('No se pudo agregar o actualizar la historia. Inténtalo de nuevo.');
     }
   };
 
   // EDITAR HISTORIAS
-  const handleEditHistory = async (historiaId, newActivity) => {
-    try {
-      const response = await empresaService.updateHistory(id, historiaId, newActivity);
-      const updatedHistorias = empresaId.historias.map((historia) =>
-        historia._id === historiaId ? { ...historia, activity: newActivity } : historia
-      );
-      setEmpresaId({ ...empresaId, historias: updatedHistorias });
-    } catch (err) {
-      console.error('Error al editar la historia:', err.message);
-    }
+  const handleEditHistory = (historiaId, currentActivity) => {
+    setEditingHistoryId(historiaId);
+    setActivity(currentActivity); // Llenar el formulario con la actividad actual de la historia
+    setIsVisible(true); // Mostrar el formulario para editar
   };
 
   // ELIMINAR HISTORIA
@@ -75,16 +76,14 @@ const EmpresaId = () => {
     try {
       const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar esta historia?');
       if (!confirmDelete) return;
-  
-      await empresaService.deleteHistory(id, historiaId); // Llama al servicio de eliminación
+
+      await empresaService.deleteHistory(id, historiaId);
       const updatedHistorias = empresaId.historias.filter((historia) => historia._id !== historiaId);
       setEmpresaId({ ...empresaId, historias: updatedHistorias });
     } catch (err) {
-      console.error('Error al eliminar la historia:', err.message);
       setError('No se pudo eliminar la historia. Inténtalo de nuevo.');
     }
   };
-  
 
   if (loading) return <p>Cargando...</p>;
   if (error) return <p>Error al cargar la empresa: {error}</p>;
@@ -102,13 +101,13 @@ const EmpresaId = () => {
               empresaId.historias.map((historia) => (
                 <div key={historia._id} className="card_history">
                   <h6>{historia.activity}</h6>
-                  <button onClick={() => handleEditHistory(historia._id, 'Nueva actividad')}>Editar</button>
+                  <button onClick={() => handleEditHistory(historia._id, historia.activity)}>
+                    Editar
+                  </button>
                   <button onClick={() => handleDeleteHistory(historia._id)}>Eliminar</button>
 
                   {historia.tickets && historia.tickets.length > 0 ? (
-                    historia.tickets.map((emp, index) => (
-                      <p key={index}>{emp.titulo}</p>
-                    ))
+                    historia.tickets.map((emp, index) => <p key={index}>{emp.titulo}</p>)
                   ) : (
                     <p>No hay tickets disponibles.</p>
                   )}
@@ -125,13 +124,13 @@ const EmpresaId = () => {
 
       {/* Botón para mostrar el formulario */}
       <button onClick={() => setIsVisible(!isVisible)}>
-        {isVisible ? 'Cancelar' : 'Agregar historia'}
+        {isVisible ? 'Cancelar' : 'Agregar'}
       </button>
 
-      {/* Formulario para agregar historia */}
+      {/* Formulario para agregar o editar historia */}
       {isVisible && (
         <form onSubmit={handleSubmit}>
-          <h3>Agregar Nueva Historia</h3>
+          <h3>{editingHistoryId ? 'Editar Historia' : 'Agregar Nueva Historia'}</h3>
           <label htmlFor="activity">Actividad:</label>
           <input
             type="text"
@@ -140,7 +139,7 @@ const EmpresaId = () => {
             onChange={(e) => setActivity(e.target.value)}
             required
           />
-          <button type="submit">Agregar</button>
+          <button type="submit">{editingHistoryId ? 'Actualizar' : 'Agregar'}</button>
         </form>
       )}
     </div>
