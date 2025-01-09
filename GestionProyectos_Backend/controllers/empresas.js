@@ -21,6 +21,8 @@ const getTokenFrom = request => {
     return null
   }
 
+
+
 // obtener empresas
 empresasRouter.get('/', async (request, response) => {
     const empresas = await Empresa.find({}).populate('user', { username: 1, name: 1 })
@@ -77,6 +79,57 @@ empresasRouter.post('/', middleware.userExtractor, async (request, response) => 
     }
 })
 
+// editar empresa
+empresasRouter.put('/:id', middleware.userExtractor, async (request, response) => {
+    const empresaId = request.params.id;
+    const { name, city } = request.body;
+
+    console.log('Empresa ID:', empresaId);
+    console.log('Datos recibidos:', { name, city });
+
+    if (!name || !city) {
+        return response.status(400).json({ error: 'Name and city are required' });
+    }
+
+    try {
+        // Buscar la empresa
+        const empresa = await Empresa.findById(empresaId);
+        console.log('Empresa encontrada:', empresa);
+
+        if (!empresa) {
+            return response.status(404).json({ error: 'Empresa not found' });
+        }
+
+        // Verificar que el usuario esté autenticado y que la empresa tenga un propietario
+        const user = request.user;
+        console.log('Usuario autenticado:', user);
+
+        if (!user) {
+            return response.status(401).json({ error: 'token missing or invalid' });
+        }
+
+        if (!empresa.user) {
+            return response.status(404).json({ error: 'Empresa does not have a user associated' });
+        }
+
+        // Verificar si el usuario es el propietario de la empresa
+        if (empresa.user.toString() !== user.id.toString()) {
+            return response.status(403).json({ error: 'Forbidden' });
+        }
+
+        // Actualizar los campos de la empresa
+        empresa.name = name;
+        empresa.city = city;
+
+        const updatedEmpresa = await empresa.save();
+        response.status(200).json(updatedEmpresa);
+    } catch (error) {
+        console.error('Error al actualizar la empresa:', error);
+        response.status(500).json({ error: 'An error occurred while updating the empresa' });
+    }
+});
+
+
 // eliminar empresa
 empresasRouter.delete('/:id', middleware.userExtractor, async (request, response) => {
 
@@ -114,9 +167,7 @@ empresasRouter.delete('/:id', middleware.userExtractor, async (request, response
     
 })
 
-
-// Agregar una historia
-
+// agregar historia
 empresasRouter.post('/:empresaId/historias', async (request, response) => {
     const { empresaId } = request.params;
     const { activity } = request.body;
@@ -156,42 +207,41 @@ empresasRouter.post('/:empresaId/historias', async (request, response) => {
 
 // Crear un nuevo ticket
 empresasRouter.post('/:empresaId/historias/:historiaId/tickets', async (request, response) => {
-
     const { empresaId, historiaId } = request.params;
     const { titulo, descripcion, estado } = request.body;
-  
+
     if (!titulo) {
-      return response.status(400).json({ error: 'Titulo is required' });
+        return response.status(400).json({ error: 'Titulo es requerido' });
     }
-  
+
     try {
-      // Verificar si la historia existe y pertenece a la empresa
-      const historia = await Historia.findById(historiaId);
-      if (!historia || historia.empresaID.toString() !== empresaId) {
-        return response.status(404).json({ error: 'Historia not found for this empresa' });
-      }
-  
-      // Crear el nuevo ticket
-      const newTicket = new Ticket({
-        titulo,
-        descripcion,
-        estado,
-        historiaID: historiaId,
-        historial: [{ estado: estado || 'activo' }] // Historial inicial del ticket
-      });
-  
-      const savedTicket = await newTicket.save();
-  
-      // Agregar el ticket a la empresa
-      historia.tickets = historia.tickets.concat(savedTicket._id);
-      await historia.save();
-  
-      response.status(201).json(savedTicket);
+        // Verificar si la historia existe y pertenece a la empresa
+        const historia = await Historia.findById(historiaId);
+        if (!historia || historia.empresaID.toString() !== empresaId) {
+            return response.status(404).json({ error: 'Historia no encontrada para esta empresa' });
+        }
+
+        // Crear el nuevo ticket
+        const newTicket = new Ticket({
+            titulo,
+            descripcion,
+            estado,
+            historiaID: historiaId,
+            historial: [{ estado: estado || 'activo' }] // Historial inicial del ticket
+        });
+
+        const savedTicket = await newTicket.save();
+
+        // Agregar el ticket a la lista de tickets de la historia
+        historia.tickets = historia.tickets.concat(savedTicket._id);
+        await historia.save();
+
+        response.status(201).json(savedTicket);
     } catch (error) {
-      console.error('Error creating ticket:', error);
-      response.status(500).json({ error: 'An error occurred while creating the ticket' });
+        console.error('Error al crear el ticket:', error);
+        response.status(500).json({ error: 'Error al crear el ticket' });
     }
-  });
+});
 
 
 // Editar ticket

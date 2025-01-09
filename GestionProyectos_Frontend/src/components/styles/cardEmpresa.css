@@ -1,6 +1,7 @@
 .card-empresa {
-    background-color: gray;
+  background-color: orange;
     border-radius: 10px;
     width:100%;
+    text-align: center;
    
 }
