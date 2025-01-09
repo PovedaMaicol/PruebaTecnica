@@ -167,6 +167,11 @@ empresasRouter.delete('/:id', middleware.userExtractor, async (request, response
     
 })
 
+
+
+
+
+
 // agregar historia
 empresasRouter.post('/:empresaId/historias', async (request, response) => {
     const { empresaId } = request.params;
@@ -204,6 +209,44 @@ empresasRouter.post('/:empresaId/historias', async (request, response) => {
 
 
 })
+
+
+// eliminar historia
+// Eliminar una historia
+empresasRouter.delete('/:empresaId/historias/:historiaId', async (request, response) => {
+    const { empresaId, historiaId } = request.params;
+
+    try {
+        // Verificar si la empresa existe
+        const empresa = await Empresa.findById(empresaId);
+        if (!empresa) {
+            return response.status(404).json({ error: 'Empresa not found' });
+        }
+
+        // Verificar si la historia existe
+        const historia = await Historia.findById(historiaId);
+        if (!historia) {
+            return response.status(404).json({ error: 'Historia not found' });
+        }
+
+        // Verificar si la historia pertenece a la empresa
+        if (historia.empresaID.toString() !== empresaId) {
+            return response.status(400).json({ error: 'Historia does not belong to this empresa' });
+        }
+
+        // Eliminar la historia de la colección
+        await Historia.findByIdAndDelete(historiaId);
+
+        // Eliminar la referencia de la historia en la empresa
+        empresa.historias = empresa.historias.filter(h => h.toString() !== historiaId);
+        await empresa.save();
+
+        response.status(204).end();
+    } catch (error) {
+        console.error('Error deleting historia:', error);
+        response.status(500).json({ error: 'An error occurred while deleting the historia' });
+    }
+});
 
 // Crear un nuevo ticket
 empresasRouter.post('/:empresaId/historias/:historiaId/tickets', async (request, response) => {

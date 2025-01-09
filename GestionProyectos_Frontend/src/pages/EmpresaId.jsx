@@ -73,13 +73,18 @@ const EmpresaId = () => {
   // ELIMINAR HISTORIA
   const handleDeleteHistory = async (historiaId) => {
     try {
-      await empresaService.deleteHistory(id, historiaId);
+      const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar esta historia?');
+      if (!confirmDelete) return;
+  
+      await empresaService.deleteHistory(id, historiaId); // Llama al servicio de eliminación
       const updatedHistorias = empresaId.historias.filter((historia) => historia._id !== historiaId);
       setEmpresaId({ ...empresaId, historias: updatedHistorias });
     } catch (err) {
       console.error('Error al eliminar la historia:', err.message);
+      setError('No se pudo eliminar la historia. Inténtalo de nuevo.');
     }
   };
+  
 
   if (loading) return <p>Cargando...</p>;
   if (error) return <p>Error al cargar la empresa: {error}</p>;

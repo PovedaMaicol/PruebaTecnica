@@ -75,4 +75,15 @@ const addHistory = async (id, historia) => {
   }
 };
 
-        export default { getAll, create, update, destroy, addHistory, setToken }
+const deleteHistory = async(empresaId, historiaId) => {
+  try {
+    const response = await axios.delete(`${base}${url}/${empresaId}/historias/${historiaId}`)
+    console.log('Historia eliminada:', response);
+    return response.data;
+  } catch (error) {
+    console.error('Error al eliminar la historia:', error.response.data);
+    return false; 
+  }
+}
+
+        export default { getAll, create, update, destroy, addHistory, deleteHistory, setToken }
