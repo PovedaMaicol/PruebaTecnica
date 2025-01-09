@@ -9,7 +9,7 @@ const Navigation = ({ user, handleLogout }) => {
   return (
     <Navbar bg="light" expand="lg">
       <Container>
-        <Navbar.Brand as={Link} to="/">EmpresasApp</Navbar.Brand>
+        <Navbar.Brand as={Link} to="/empresas">EmpresasApp</Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="ms-auto">

@@ -9,31 +9,42 @@ const EmpresasPage = ({ user, handleLogout }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
-  const [editingEmpresa, setEditingEmpresa] = useState(null); // Para guardar la empresa que se va a editar
+  const [editingEmpresa, setEditingEmpresa] = useState(null);
+  const base = import.meta.env.VITE_API_URL;
+  const url = '/api/empresas'
 
+  // Manejar la carga inicial de empresas
   useEffect(() => {
-    console.log('empresas es', empresas);
-    const url = 'http://localhost:3001/api/empresas';
-    fetchData(url);
-  }, []);
+    const api = `${base}${url}`;
+    fetchData(api);
+  }, [empresas?.length]);
 
+
+
+  // Crear una empresa
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newEmpresa = { name, city };
 
     try {
-      // Si hay una empresa en edición, actualiza
       if (editingEmpresa) {
+        // Si estamos editando, actualizamos
         await empresaService.update(editingEmpresa.id, newEmpresa);
-        fetchData(); // Para obtener la lista actualizada de empresas
+        // Actualizamos la empresa en el estado de empresas
+        const updatedEmpresas = empresas.map((empresa) =>
+          empresa.id === editingEmpresa.id ? { ...empresa, ...newEmpresa } : empresa
+        );
+        // Actualizamos el estado sin recargar los datos
+        fetchData(); // Esto es innecesario, ya que estamos actualizando directamente el estado
         setEditingEmpresa(null); // Limpiar la empresa en edición
       } else {
-        // Si no estamos editando, crear una nueva empresa
-        await empresaService.create(newEmpresa);
-        fetchData(); // Solo si quieres asegurarte de que el servidor tiene la última lista de empresas.
+        // Si estamos creando una nueva empresa
+        const createdEmpresa = await empresaService.create(newEmpresa);
+        // Añadimos la nueva empresa a la lista sin recargar los datos
+        fetchData(); // Alternativamente, actualizaríamos el estado directamente aquí
       }
 
-      // Limpiar los campos
+      // Limpiar los campos y ocultar el formulario
       setName('');
       setCity('');
       setIsVisible(false);
@@ -42,9 +53,22 @@ const EmpresasPage = ({ user, handleLogout }) => {
     }
   };
 
+  // eliminar una empresa
+  const handleDelete = async (id) => {
+    console.log("El ID que se está pasando para eliminar es:", id);
+    try {
+      await empresaService.destroy(id); // Llamamos al servicio destroy para eliminar la empresa
+      // Actualizamos el estado de empresas después de eliminar
+      const updatedEmpresas = empresas.filter((empresa) => empresa.id !== id);
+      fetchData(); // O alternativamente, puedes eliminar la empresa directamente del estado
+    } catch (error) {
+      console.error('Error al eliminar la empresa:', error);
+    }
+  };
+
   const handleEdit = (empresa) => {
     setEditingEmpresa(empresa);
-    setName(empresa.name); // Rellenar los campos con la información actual
+    setName(empresa.name);
     setCity(empresa.city);
     setIsVisible(true); // Mostrar el formulario
   };
@@ -96,6 +120,7 @@ const EmpresasPage = ({ user, handleLogout }) => {
             isVisible={isVisible}
             setIsVisible={setIsVisible}
             onEdit={() => handleEdit(empresa)} // Pasar la función para editar
+            onDelete={(id) => handleDelete(id)}
           />
         ))}
       </div>

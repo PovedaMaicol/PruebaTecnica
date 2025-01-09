@@ -9,9 +9,8 @@ import './App.css';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-
 import loginService from './services/login'; // Importa loginService correctamente
-import empresaService from './services/empresa'
+import empresaService from './services/empresa';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -20,23 +19,20 @@ function App() {
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
-
-
-    // Validar si hay un usuario logueado en localStorage
-    useEffect(() => {
+  // Validar si hay un usuario logueado en localStorage
+  useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedEmpresasAppUser');
     if (loggedUserJSON) {
       const user = JSON.parse(loggedUserJSON);
       setUser(user);
-      empresaService.setToken(user.token)
+      empresaService.setToken(user.token);
     }
   }, []);
 
-   // Monitorear cambios en 'user'
-   useEffect(() => {
+  // Monitorear cambios en 'user'
+  useEffect(() => {
     console.log('Current user:', user);
   }, [user]);
-
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -48,8 +44,7 @@ function App() {
       // Almacenar el usuario y token en localStorage
       window.localStorage.setItem('loggedEmpresasAppUser', JSON.stringify(user));
 
-  
-      empresaService.setToken(user.token)
+      empresaService.setToken(user.token);
       // Actualizar el estado global del usuario
       setUser(user);
 
@@ -67,7 +62,6 @@ function App() {
     }
   };
 
- 
   const handleLogout = () => {
     window.localStorage.clear();
     setUser(null);
@@ -76,24 +70,31 @@ function App() {
 
   return (
     <div>
-      <Navigation user={user} handleLogout={handleLogout} />
+      {/* Solo mostrar el Navigation si el usuario está logueado */}
+      {user && <Navigation user={user} handleLogout={handleLogout} />}
+      
       <Routes>
         <Route path='/empresas' element={<EmpresasPage user={user} handleLogout={handleLogout}/>} />
+        
+        {/* Solo mostrar el LoginPage si el usuario no está logueado */}
         <Route
           path='/'
           element={
-            <LoginPage
-              setUser={setUser}
-              handleLogin={handleLogin}
-              username={username}
-              password={password}
-              setUsername={setUsername}
-              setPassword={setPassword}
-              setErrorMessage={setErrorMessage} // Asegúrate de pasar esto
-              errorMessage={errorMessage}
-            />
+            !user && (
+              <LoginPage
+                setUser={setUser}
+                handleLogin={handleLogin}
+                username={username}
+                password={password}
+                setUsername={setUsername}
+                setPassword={setPassword}
+                setErrorMessage={setErrorMessage} // Asegúrate de pasar esto
+                errorMessage={errorMessage}
+              />
+            )
           }
         />
+        
         <Route path='/empresas/:id' element={<EmpresaId />} />
       </Routes>
     </div>

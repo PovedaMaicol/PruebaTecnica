@@ -15,13 +15,21 @@ const getAll = () => {
     return request.then(response => response.data)
 }
 
+// create empresa
 const create = async newObject => {
-    const config = {
+  const config = {
     headers: { Authorization: token },
-    }
-    const response = await axios.post(`${base}${url}`, newObject, config)
-    return response.data
-}
+  };
+
+  try {
+    const response = await axios.post(`${base}${url}`, newObject, config);
+    console.log('Respuesta del servidor:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error al crear empresa:', error);
+    throw error;
+  }
+};
 
 const update = async (id, updateEmpresa) => {
   const dire = `${base}${url}/${id}`;
@@ -49,6 +57,8 @@ const update = async (id, updateEmpresa) => {
 
   // const destroy 
   const destroy = async (id) => {
+    
+    console.log("ID recibido para eliminar:", id);
 
     const config = {
       headers: { Authorization: token },
