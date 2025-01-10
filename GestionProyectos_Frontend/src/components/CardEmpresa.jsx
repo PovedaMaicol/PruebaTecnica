@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, Button } from 'react-bootstrap';
 import './styles/cardEmpresa.css';
 
-const CardEmpresa = ({ empresa, onDelete, onEdit }) => {
+const CardEmpresa = ({ empresa, onDelete }) => {
   if (!empresa) return null;
 
   return (
