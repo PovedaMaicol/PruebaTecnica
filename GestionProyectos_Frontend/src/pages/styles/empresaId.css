@@ -1,3 +1,4 @@
+
 .grid_container {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -9,4 +10,21 @@
     background-color: orange;
     border-radius: 10px;
     text-align: center;
+}
+
+.info_empresa{
+    display: flex;
+    justify-content: space-between;
+}
+
+.mt-4 {
+    z-index: 5;
+    position: absolute;
+    height: 40vh;
+    width: 95%;
+    background-color: beige;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
 }

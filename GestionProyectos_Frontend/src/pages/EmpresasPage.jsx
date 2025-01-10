@@ -3,6 +3,8 @@ import empresaService from '../services/empresa';
 import CardEmpresa from '../components/CardEmpresa';
 import useFetch from '../hooks/useFetch';
 import './styles/empresasPage.css';
+import { Form, Button, InputGroup } from "react-bootstrap";
+
 
 const EmpresasPage = ({ user, handleLogout }) => {
   const { data: empresas = [], fetchData, loading, error } = useFetch();
@@ -81,36 +83,69 @@ const EmpresasPage = ({ user, handleLogout }) => {
     : [];
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-        <p>User: {user?.username}</p>
-        <button onClick={handleLogout}>Cerrar sesión</button>
+    <div className='container'>
+      <div className='info_usuario'>
+        User: {user?.username}
+        <i className='bx bx-log-out' style={{fontSize: '30px'}} onClick={() => handleLogout()}></i>
+        
       </div>
 
-      <button onClick={() => setIsVisible(!isVisible)}>Add Empresa</button>
+      <Button onClick={() => setIsVisible(!isVisible)}>
+  {isVisible ? "Cancelar" : "Add Empresa"}
+</Button>
+
 
       {isVisible && (
-        <form onSubmit={handleSubmit}>
-          <h3>{editingEmpresa ? 'Editar Empresa' : 'Agregar Nueva Empresa'}</h3>
-          <label htmlFor="name">Nombre de la empresa:</label>
-          <input
-            type="text"
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-          <label htmlFor="city">Ciudad:</label>
-          <input
-            type="text"
-            id="city"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            required
-          />
-          <button type="submit">{editingEmpresa ? 'Actualizar' : 'Agregar'}</button>
-        </form>
-      )}
+
+        <div className='container_form'>
+  <Form onSubmit={handleSubmit} noValidate>
+    <h3 className="mb-4">
+      {editingEmpresa ? "Editar Empresa" : "Agregar Nueva Empresa"}
+    </h3>
+
+    {/* Campo: Nombre de la empresa */}
+    <Form.Group controlId="formName" className="mb-3">
+      <Form.Label>Nombre de la empresa:</Form.Label>
+      <InputGroup>
+       
+        <Form.Control
+          type="text"
+          placeholder="Nombre de la empresa"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+      </InputGroup>
+      <Form.Control.Feedback type="invalid">
+        Por favor, ingresa el nombre de la empresa.
+      </Form.Control.Feedback>
+    </Form.Group>
+
+    {/* Campo: Ciudad */}
+    <Form.Group controlId="formCity" className="mb-3">
+      <Form.Label>Ciudad:</Form.Label>
+      <InputGroup>
+   
+        <Form.Control
+          type="text"
+          placeholder="Ciudad"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          required
+        />
+      </InputGroup>
+      <Form.Control.Feedback type="invalid">
+        Por favor, ingresa la ciudad.
+      </Form.Control.Feedback>
+    </Form.Group>
+
+    <Button type="submit" variant="success" className="w-100">
+      {editingEmpresa ? "Actualizar" : "Agregar"}
+    </Button>
+  </Form>
+  </div>
+)}
+
 
       <div className="container-grid">
         {empresasValidas.map((empresa) => (

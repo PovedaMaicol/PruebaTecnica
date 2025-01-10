@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import empresaService from '../services/empresa'; // Asegúrate de que el archivo se llame correctamente
+import empresaService from '../services/empresa';
+import { Button, Card, Container, Form, Spinner, Alert, Row, Col } from 'react-bootstrap';
 import './styles/empresaId.css';
 
 const EmpresaId = () => {
@@ -8,14 +9,13 @@ const EmpresaId = () => {
   const [empresaId, setEmpresaId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isVisible, setIsVisible] = useState(false); // Controla la visibilidad del formulario
+  const [isVisible, setIsVisible] = useState(false);
   const [activity, setActivity] = useState('');
-  const [editingHistoryId, setEditingHistoryId] = useState(null); // Para saber si estamos editando una historia
+  const [editingHistoryId, setEditingHistoryId] = useState(null);
 
   const base = import.meta.env.VITE_API_URL;
   const url = '/api/empresas';
 
-  // Cargar la empresa al cargar el componente
   const fetchEmpresa = async () => {
     try {
       const response = await fetch(`${base}${url}/${id}`);
@@ -35,43 +35,36 @@ const EmpresaId = () => {
     fetchEmpresa();
   }, [id]);
 
-  // AÑADIR HISTORIAS
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const nuevaHistoria = { activity };
 
     try {
       if (editingHistoryId) {
-        // Si estamos editando una historia
         await empresaService.updateHistory(id, editingHistoryId, activity);
         const updatedHistorias = empresaId.historias.map((historia) =>
           historia._id === editingHistoryId ? { ...historia, activity } : historia
         );
         setEmpresaId({ ...empresaId, historias: updatedHistorias });
-        setEditingHistoryId(null); // Reseteamos el ID de la historia que estamos editando
+        setEditingHistoryId(null);
       } else {
-        // Si estamos agregando una nueva historia
         const response = await empresaService.addHistory(id, nuevaHistoria);
         const updatedHistorias = [...empresaId.historias, response];
         setEmpresaId({ ...empresaId, historias: updatedHistorias });
       }
-
-      setActivity(''); // Limpiar el campo de actividad
-      setIsVisible(false); // Ocultar el formulario
+      setActivity('');
+      setIsVisible(false);
     } catch (err) {
       setError('No se pudo agregar o actualizar la historia. Inténtalo de nuevo.');
     }
   };
 
-  // EDITAR HISTORIAS
   const handleEditHistory = (historiaId, currentActivity) => {
     setEditingHistoryId(historiaId);
-    setActivity(currentActivity); // Llenar el formulario con la actividad actual de la historia
-    setIsVisible(true); // Mostrar el formulario para editar
+    setActivity(currentActivity);
+    setIsVisible(true);
   };
 
-  // ELIMINAR HISTORIA
   const handleDeleteHistory = async (historiaId) => {
     try {
       const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar esta historia?');
@@ -85,64 +78,134 @@ const EmpresaId = () => {
     }
   };
 
-  if (loading) return <p>Cargando...</p>;
-  if (error) return <p>Error al cargar la empresa: {error}</p>;
+  if (loading)
+    return (
+      <Container className="text-center mt-5">
+        <Spinner animation="border" />
+        <p>Cargando...</p>
+      </Container>
+    );
+  if (error)
+    return (
+      <Container className="mt-5">
+        <Alert variant="danger">{error}</Alert>
+      </Container>
+    );
 
   return (
-    <div>
+    <Container className="mt-3">
       {empresaId ? (
         <>
-          <h3>{empresaId.name}</h3>
-          <p>Ciudad: {empresaId.city}</p>
-          <h2>Historias</h2>
 
-          <div className="grid_container">
+
+        
+   
+
+        <div className='info_empresa'>
+
+          <div>
+        <h4 style={{margin: 0}}>Historias</h4>
+        <p>Empresa {empresaId.name}<br/>
+        Ciudad: {empresaId.city}</p>
+        
+          </div>
+
+
+
+
+          {isVisible && (
+        <Form className="mt-4" onSubmit={handleSubmit}>
+
+          <div style={{
+            display: 'flex', 
+            justifyContent: 'space-between'}}>
+
+          <h5>{editingHistoryId ? 
+          'Editar Historia' : 'Agregar Nueva Historia'}
+          </h5>
+
+          <i className='bx bx-x-circle' 
+          style={{'color': 'red', 'fontSize':'18px'}}
+          onClick={() => setIsVisible(!isVisible)}></i>
+
+          </div>
+          
+          <Form.Group controlId="activity">
+            <Form.Label>Historia</Form.Label>
+            <Form.Control
+              type="text"
+              value={activity}
+              onChange={(e) => setActivity(e.target.value)}
+              required
+            />
+          </Form.Group>
+          <Button variant="success" type="submit" className="mt-3">
+            {editingHistoryId ? 'Actualizar' : 'Agregar'}
+          </Button>
+        </Form>
+      )}
+
+
+          <div>
+
+         
+          <Button
+        variant="primary"
+        className="mt-3"
+        onClick={() => setIsVisible(!isVisible)}
+      >
+        {isVisible ? 'Cancelar' : 'Agregar'}
+      </Button>
+      </div>
+        </div>
+        
+          <Row className="gy-3">
             {empresaId.historias && empresaId.historias.length > 0 ? (
               empresaId.historias.map((historia) => (
-                <div key={historia._id} className="card_history">
-                  <h6>{historia.activity}</h6>
-                  <button onClick={() => handleEditHistory(historia._id, historia.activity)}>
-                    Editar
-                  </button>
-                  <button onClick={() => handleDeleteHistory(historia._id)}>Eliminar</button>
-
-                  {historia.tickets && historia.tickets.length > 0 ? (
-                    historia.tickets.map((emp, index) => <p key={index}>{emp.titulo}</p>)
-                  ) : (
-                    <p>No hay tickets disponibles.</p>
-                  )}
-                </div>
+                <Col key={historia._id} md={4}>
+                  <Card>
+                    <Card.Body>
+                      <Card.Title>{historia.activity}</Card.Title>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        className="me-2"
+                        onClick={() => handleEditHistory(historia._id, historia.activity)}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => handleDeleteHistory(historia._id)}
+                      >
+                        Eliminar
+                      </Button>
+                      {historia.tickets && historia.tickets.length > 0 ? (
+                        historia.tickets.map((ticket, index) => (
+                          <Card.Text key={index} className="mt-2">
+                           <span style={{'fontWeight': 'bold'}}>Ticket {index+1}</span> {ticket.titulo}
+                          </Card.Text>
+                        ))
+                      ) : (
+                        <Card.Text>No hay tickets disponibles.</Card.Text>
+                      )}
+                    </Card.Body>
+                  </Card>
+                </Col>
               ))
             ) : (
               <p>No hay historias disponibles.</p>
             )}
-          </div>
+          </Row>
         </>
       ) : (
         <p>No se encontró la empresa.</p>
       )}
 
-      {/* Botón para mostrar el formulario */}
-      <button onClick={() => setIsVisible(!isVisible)}>
-        {isVisible ? 'Cancelar' : 'Agregar'}
-      </button>
+      
 
-      {/* Formulario para agregar o editar historia */}
-      {isVisible && (
-        <form onSubmit={handleSubmit}>
-          <h3>{editingHistoryId ? 'Editar Historia' : 'Agregar Nueva Historia'}</h3>
-          <label htmlFor="activity">Actividad:</label>
-          <input
-            type="text"
-            id="activity"
-            value={activity}
-            onChange={(e) => setActivity(e.target.value)}
-            required
-          />
-          <button type="submit">{editingHistoryId ? 'Actualizar' : 'Agregar'}</button>
-        </form>
-      )}
-    </div>
+    </Container>
   );
 };
 
