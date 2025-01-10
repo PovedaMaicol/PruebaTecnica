@@ -17,14 +17,29 @@
     justify-content: space-between;
 }
 
+.mt-2 {
+   margin: 0;
+}
+
 .mt-4 {
     z-index: 5;
     position: absolute;
-    height: 40vh;
+    height: 60vh;
     width: 95%;
     background-color: beige;
     padding: 10px;
     display: flex;
     flex-direction: column;
     justify-content: space-around;
+}
+
+.titular_history {
+    display: flex;
+    justify-content: space-between;
+    text-align: center;
+    display: flex;
+}
+
+.contenedor_iconos {
+    width: 10%;
 }

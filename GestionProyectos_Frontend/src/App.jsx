@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 
 import loginService from './services/login'; // Importa loginService correctamente
 import empresaService from './services/empresa';
+import RegistrationForm from './pages/RegistrationForm';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -36,7 +37,7 @@ function App() {
 
   const handleLogin = async (event) => {
     event.preventDefault();
-    console.log('logging in with', username, password);
+    console.log('logging in with', username);
 
     try {
       const user = await loginService.login({ username, password });
@@ -94,6 +95,10 @@ function App() {
             )
           }
         />
+
+
+        
+        <Route path='/users' element={<RegistrationForm/>}/>
         
         <Route path='/empresas/:id' element={<EmpresaId />} />
       </Routes>

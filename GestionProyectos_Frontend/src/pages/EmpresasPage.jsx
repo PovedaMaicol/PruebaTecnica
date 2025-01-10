@@ -64,6 +64,7 @@ const EmpresasPage = ({ user, handleLogout }) => {
       const updatedEmpresas = empresas.filter((empresa) => empresa.id !== id);
       fetchData(); // O alternativamente, puedes eliminar la empresa directamente del estado
     } catch (error) {
+      alert('no tienes permiso para borrar esta empresa')
       console.error('Error al eliminar la empresa:', error);
     }
   };
@@ -84,11 +85,14 @@ const EmpresasPage = ({ user, handleLogout }) => {
 
   return (
     <div className='container'>
+      
       <div className='info_usuario'>
+        Empresas <br/>
         User: {user?.username}
         <i className='bx bx-log-out' style={{fontSize: '30px'}} onClick={() => handleLogout()}></i>
         
       </div>
+    
 
       <Button onClick={() => setIsVisible(!isVisible)}>
   {isVisible ? "Cancelar" : "Add Empresa"}

@@ -164,17 +164,13 @@ const EmpresaId = ( {user }) => {
             {tickets.map((ticket, index) => (
               <li key={index}>
                 {ticket} 
-                <Button
-                  variant="outline-danger"
-                  size="sm"
-                  className="ms-2"
+               
+                  <i className='bx bx-x' 
                   onClick={() => {
                     const updatedTickets = tickets.filter((_, i) => i !== index);
                     setTickets(updatedTickets);  // Eliminar ticket
-                  }}
-                >
-                  Eliminar
-                </Button>
+                  }}></i>
+               
               </li>
             ))}
           </ul>
@@ -204,22 +200,29 @@ const EmpresaId = ( {user }) => {
                 <Col key={historia._id} md={4}>
                   <Card>
                     <Card.Body>
-                      <Card.Title>{historia.activity}</Card.Title>
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        className="me-2"
-                        onClick={() => handleEditHistory(historia._id, historia.activity, historia.tickets)}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() => handleDeleteHistory(historia._id)}
-                      >
-                        Eliminar
-                      </Button>
+
+                      <div className='titular_history'>
+                      <Card.Title>
+                      <span style={{fontWeight: 'lighter'}}>Actividad:</span> {historia.activity}</Card.Title>
+                      
+                     <div className='contenedor_iconos'>
+
+
+                      <i 
+                      className='bx bx-edit'
+                      style={{fontSize: '20px'}}
+                      onClick={() => handleEditHistory(historia._id, historia.activity, historia.tickets)}></i>
+
+                      <i 
+                      className='bx bx-trash' 
+                      style={{fontSize: '20px'}} 
+                      onClick={() => handleDeleteHistory(historia._id)}
+                      ></i>
+                      </div>
+                      </div>
+                      
+                      
+                    
                       {historia.tickets && historia.tickets.length > 0 ? (
                         historia.tickets.map((ticket, index) => (
                           <Card.Text key={index} className="mt-2">

@@ -14,7 +14,6 @@ const Navigation = ({ user, handleLogout }) => {
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="ms-auto">
             <Nav.Link as={Link} to="/empresas">Empresas</Nav.Link>
-            <Nav.Link as={Link} to="/empresas/1">Ver Empresa</Nav.Link>
             <Nav.Link as={Link} onClick={handleLogout} to="/">Logout</Nav.Link>
           </Nav>
         </Navbar.Collapse>

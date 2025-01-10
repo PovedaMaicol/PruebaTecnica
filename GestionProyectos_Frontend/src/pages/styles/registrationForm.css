@@ -1,0 +1,12 @@
+.container_btn {
+display: flex;
+
+justify-content: center;
+}
+.mt-5{
+  height: 60vh;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}

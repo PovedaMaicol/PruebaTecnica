@@ -28,7 +28,8 @@ const LoginPage = ({
           <i className='fa-regular fa-pen-to-square'></i>
           <h1>Empresas</h1>
           <br />
-          <p>SIGN IN TO CONTINUE</p>
+          <p>SIGN IN TO CONTINUE <br/>
+          <a href='/empresas#/users'>or Register Here</a></p>
         </div>
 
         {errorMessage && <div className='error-message'>{errorMessage}</div>}

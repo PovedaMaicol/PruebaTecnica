@@ -18,10 +18,10 @@ gap: 10px;
 
 .container_form {
     z-index: 5;
-    display: flex;
     position: absolute;
     background-color: white;
     width: 95%;
+    height: 50vh;
     justify-content: center;
     padding: 10px;
     border-radius: 10px;

@@ -6,3 +6,28 @@ font-size: 15px;
 .d-flex {
   text-align: center;
 }
+.mb-3 {
+  height: 100%;
+}
+
+.card-body {
+  justify-content: space-between;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-body div {
+  margin: 0;
+  padding: 0;
+}
+
+.card-title  {
+ 
+  text-align: left;
+  
+}
+
+div {
+  margin: 0;
+  padding: 0;
+}
