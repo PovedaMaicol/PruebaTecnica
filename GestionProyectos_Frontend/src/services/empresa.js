@@ -15,7 +15,7 @@ const getAll = () => {
     return request.then(response => response.data)
 }
 
-// create empresa
+// create empresa // lo uso
 const create = async newObject => {
   const config = {
     headers: { Authorization: token },
@@ -31,31 +31,44 @@ const create = async newObject => {
   }
 };
 
-const update = async (id, updateEmpresa) => {
-  const dire = `${base}${url}/${id}`;
-  console.log('Request URL:', dire);
-  console.log('updateEmpresa:', updateEmpresa);
-
-  const config = {
-    headers: { Authorization: token },
-  };
-
+// obtener una empresa // lo uso
+const getById = async (id) => {
   try {
-    const response = await axios.put(dire, updateEmpresa, config);
-    console.log('Response:', response.data);  // Verifica lo que devuelve el servidor
-    return response.data;
+    const response = await axios.get(`${base}${url}/${id}`);
+    return response.data; // Retorna toda la información de la empresa
   } catch (error) {
-    if (error.response) {
-      console.error(`Error updating empresa: ${error.response.data}`);
-    } else {
-      console.error(`Error updating empresa: ${error.message}`);
-    }
+    console.error('Error al obtener la empresa:', error);
     throw error;
   }
 };
 
 
-  // const destroy 
+// // editar empresa
+// const update = async (id, updateEmpresa) => {
+//   const dire = `${base}${url}/${id}`;
+//   console.log('Request URL:', dire);
+//   console.log('updateEmpresa:', updateEmpresa);
+
+//   const config = {
+//     headers: { Authorization: token },
+//   };
+
+//   try {
+//     const response = await axios.put(dire, updateEmpresa, config);
+//     console.log('Response:', response.data);  // Verifica lo que devuelve el servidor
+//     return response.data;
+//   } catch (error) {
+//     if (error.response) {
+//       console.error(`Error updating empresa: ${error.response.data}`);
+//     } else {
+//       console.error(`Error updating empresa: ${error.message}`);
+//     }
+//     throw error;
+//   }
+// };
+
+
+  // const destroy empresa // lo uso
   const destroy = async (id) => {
     
     console.log("ID recibido para eliminar:", id);
@@ -85,6 +98,9 @@ const addHistory = async (id, historia) => {
   }
 };
 
+// obtener una historia
+
+
   // update history
 const updateHistory = async (empresaId, historiaId, newActivity) => {
     const response = await axios.put(`${base}${url}/${empresaId}/historias/${historiaId}`, { activity: newActivity });
@@ -103,4 +119,4 @@ const deleteHistory = async(empresaId, historiaId) => {
   }
 }
 
-        export default { getAll, create, update, destroy, addHistory, updateHistory, deleteHistory, setToken }
+        export default { getAll, getById, create,destroy, addHistory, updateHistory, deleteHistory, setToken }

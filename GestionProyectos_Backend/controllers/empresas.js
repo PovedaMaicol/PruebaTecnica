@@ -12,6 +12,7 @@ const Historia = require('../models/historia')
 const middleware = require('../utils/middleware')
 const {response, request} = require('express')
 const { error } = require('../utils/logger')
+const ticket = require('../models/ticket')
 
 const getTokenFrom = request => {
     const authorization = request.get('authorization')
@@ -29,22 +30,31 @@ empresasRouter.get('/', async (request, response) => {
     response.json(empresas)
 })
 
+
+// obtener empresa por id
 // obtener empresa por id
 empresasRouter.get('/:id', async (request, response) => {
-    const empresa = await Empresa.findById(request.params.id)
-    .populate({
-        path: 'historias', //mostrar historias
-    populate: {
-        path: 'tickets', //mostrar tickets
-        model: 'Ticket' // especifico el modelo relacionado
-    }}
-    )
-    if (empresa) {
-        response.json(empresa)
-    } else {
-        response.status(404).end()
+    try {
+        const empresa = await Empresa.findById(request.params.id)
+            .populate({
+                path: 'historias', // Población de historias
+                populate: {
+                    path: 'tickets', // Población de tickets dentro de cada historia
+                }
+            });
+
+        if (empresa) {
+            response.json(empresa);
+        } else {
+            response.status(404).json({ error: 'Empresa no encontrada' });
+        }
+    } catch (error) {
+        console.error('Error al obtener la empresa:', error); // Aquí puedes ver el detalle del error
+        response.status(500).json({ error: 'Error interno del servidor' });
     }
-})
+});
+
+
 
 // añadir empresa
 empresasRouter.post('/', middleware.userExtractor, async (request, response) => {
@@ -175,11 +185,15 @@ empresasRouter.delete('/:id', middleware.userExtractor, async (request, response
 // agregar historia
 empresasRouter.post('/:empresaId/historias', async (request, response) => {
     const { empresaId } = request.params;
-    const { activity } = request.body;
+    const { activity, tickets } = request.body;
 
     if (!activity) {
         return response.status(400).json({ error: 'Activity is required'});
     }
+
+    if (!Array.isArray(tickets) || tickets.some(ticket => typeof ticket !== 'string')) {
+        return response.status(400).json({ error: 'Tickets must be an array of strings' });
+      }
 
     try {
         //verificar si la empresa existe
@@ -192,6 +206,7 @@ empresasRouter.post('/:empresaId/historias', async (request, response) => {
         const newHistoria = new Historia({
         activity,
         empresaID: empresaId,
+        tickets
         });
 
         const savedHistoria = await newHistoria.save();
@@ -209,6 +224,39 @@ empresasRouter.post('/:empresaId/historias', async (request, response) => {
 
 
 })
+
+
+// Obtener historia completa (con los tickets)
+empresasRouter.get('/:empresaId/historias/:historiaId', async (request, response) => {
+    const { empresaId, historiaId } = request.params;
+
+    try {
+        // Verificar si la empresa existe
+        const empresa = await Empresa.findById(empresaId);
+        if (!empresa) {
+            return response.status(404).json({ error: 'Empresa not found' });
+        }
+
+        // Verificar si la historia existe y obtenerla junto con los tickets
+        const historia = await Historia.findById(historiaId)
+
+        if (!historia) {
+            return response.status(404).json({ error: 'Historia not found' });
+        }
+
+        // Verificar si la historia pertenece a la empresa
+        if (historia.empresaID.toString() !== empresaId) {
+            return response.status(400).json({ error: 'Historia does not belong to this empresa' });
+        }
+
+        // Responder con la historia completa (con los tickets)
+        response.status(200).json(historia);
+
+    } catch (error) {
+        console.error('Error getting historia:', error);
+        response.status(500).json({ error: 'An error occurred while fetching the historia' });
+    }
+});
 
 // Editar historia
 empresasRouter.put('/:empresaId/historias/:historiaId', async (request, response) => {
@@ -285,6 +333,26 @@ empresasRouter.delete('/:empresaId/historias/:historiaId', async (request, respo
         response.status(500).json({ error: 'An error occurred while deleting the historia' });
     }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Crear un nuevo ticket
 empresasRouter.post('/:empresaId/historias/:historiaId/tickets', async (request, response) => {

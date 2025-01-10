@@ -4,7 +4,7 @@ import empresaService from '../services/empresa';
 import { Button, Card, Container, Form, Spinner, Alert, Row, Col } from 'react-bootstrap';
 import './styles/empresaId.css';
 
-const EmpresaId = () => {
+const EmpresaId = ( {user }) => {
   const { id } = useParams();
   const [empresaId, setEmpresaId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,17 +13,21 @@ const EmpresaId = () => {
   const [activity, setActivity] = useState('');
   const [editingHistoryId, setEditingHistoryId] = useState(null);
 
+
+  // TICKETS
+  const [tickets, setTickets] = useState([]);
+  const [ticketInput, setTicketInput] = useState('');
+
+
   const base = import.meta.env.VITE_API_URL;
   const url = '/api/empresas';
 
+  // Cambia la función fetchEmpresa para usar empresaService.getById
   const fetchEmpresa = async () => {
     try {
-      const response = await fetch(`${base}${url}/${id}`);
-      if (!response.ok) {
-        throw new Error('No se encontró la empresa');
-      }
-      const data = await response.json();
-      setEmpresaId(data);
+      const data = await empresaService.getById(id); // Llama al servicio para obtener los datos
+      console.log('los datos traidos son', data)
+      setEmpresaId(data); // Guarda los datos en el estado
       setLoading(false);
     } catch (error) {
       setError('Error al cargar la empresa.');
@@ -32,38 +36,46 @@ const EmpresaId = () => {
   };
 
   useEffect(() => {
-    fetchEmpresa();
+    fetchEmpresa(); // Ejecuta la función al montar el componente
   }, [id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const nuevaHistoria = { activity };
-
+    const nuevaHistoria = { activity, tickets };
+  
     try {
+      // Si estamos editando una historia existente, usamos updateHistory
       if (editingHistoryId) {
         await empresaService.updateHistory(id, editingHistoryId, activity);
         const updatedHistorias = empresaId.historias.map((historia) =>
-          historia._id === editingHistoryId ? { ...historia, activity } : historia
+          historia._id === editingHistoryId ? { ...historia, activity, tickets } : historia
         );
         setEmpresaId({ ...empresaId, historias: updatedHistorias });
         setEditingHistoryId(null);
       } else {
+        // Si estamos creando una nueva historia, usamos addHistory
         const response = await empresaService.addHistory(id, nuevaHistoria);
         const updatedHistorias = [...empresaId.historias, response];
         setEmpresaId({ ...empresaId, historias: updatedHistorias });
       }
+  
+      // Limpiar formulario y cerrar vista
       setActivity('');
+      setTickets([]);
       setIsVisible(false);
     } catch (err) {
       setError('No se pudo agregar o actualizar la historia. Inténtalo de nuevo.');
     }
   };
+  
 
-  const handleEditHistory = (historiaId, currentActivity) => {
+  const handleEditHistory = (historiaId, currentActivity, currentTickets) => {
     setEditingHistoryId(historiaId);
     setActivity(currentActivity);
+    setTickets(currentTickets || []);  // Cargar los tickets de la historia
     setIsVisible(true);
   };
+  
 
   const handleDeleteHistory = async (historiaId) => {
     try {
@@ -96,69 +108,96 @@ const EmpresaId = () => {
     <Container className="mt-3">
       {empresaId ? (
         <>
+          <div className='info_empresa'>
+            <div>
+              <h4 style={{ margin: 0 }}>Historias</h4>
+              <p>Empresa {empresaId.name}<br />
+                Ciudad: {empresaId.city}</p>
+            </div>
 
-
-        
-   
-
-        <div className='info_empresa'>
-
-          <div>
-        <h4 style={{margin: 0}}>Historias</h4>
-        <p>Empresa {empresaId.name}<br/>
-        Ciudad: {empresaId.city}</p>
-        
-          </div>
-
-
-
-
-          {isVisible && (
+            {isVisible && (
         <Form className="mt-4" onSubmit={handleSubmit}>
-
-          <div style={{
-            display: 'flex', 
-            justifyContent: 'space-between'}}>
-
-          <h5>{editingHistoryId ? 
-          'Editar Historia' : 'Agregar Nueva Historia'}
-          </h5>
-
-          <i className='bx bx-x-circle' 
-          style={{'color': 'red', 'fontSize':'18px'}}
-          onClick={() => setIsVisible(!isVisible)}></i>
-
-          </div>
-          
-          <Form.Group controlId="activity">
-            <Form.Label>Historia</Form.Label>
-            <Form.Control
-              type="text"
-              value={activity}
-              onChange={(e) => setActivity(e.target.value)}
-              required
-            />
-          </Form.Group>
-          <Button variant="success" type="submit" className="mt-3">
-            {editingHistoryId ? 'Actualizar' : 'Agregar'}
-          </Button>
-        </Form>
-      )}
-
-
-          <div>
-
-         
-          <Button
-        variant="primary"
-        className="mt-3"
-        onClick={() => setIsVisible(!isVisible)}
-      >
-        {isVisible ? 'Cancelar' : 'Agregar'}
-      </Button>
-      </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <h5>{editingHistoryId ? 'Editar Historia' : 'Agregar Nueva Historia'}</h5>
+          <i
+            className="bx bx-x-circle"
+            style={{ color: 'red', fontSize: '18px' }}
+            onClick={() => setIsVisible(!isVisible)}
+          ></i>
         </div>
-        
+      
+        <Form.Group controlId="activity">
+          <Form.Label>Historia</Form.Label>
+          <Form.Control
+            type="text"
+            value={activity}
+            onChange={(e) => setActivity(e.target.value)}
+            required
+          />
+        </Form.Group>
+      
+        <Form.Group controlId="ticket">
+          <Form.Label>Ticket</Form.Label>
+          <Form.Control
+            type="text"
+            value={ticketInput}
+            onChange={(e) => setTicketInput(e.target.value)}
+          />
+          <Button
+            variant="outline-primary"
+            type="button"
+            onClick={() => {
+              if (ticketInput) {
+                setTickets([...tickets, ticketInput]);
+                setTicketInput('');
+              }
+            }}
+            className="mt-2"
+          >
+            Agregar Ticket
+          </Button>
+        </Form.Group>
+      
+        <div>
+          <strong>Tickets:</strong>
+          <ul>
+            {tickets.map((ticket, index) => (
+              <li key={index}>
+                {ticket} 
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  className="ms-2"
+                  onClick={() => {
+                    const updatedTickets = tickets.filter((_, i) => i !== index);
+                    setTickets(updatedTickets);  // Eliminar ticket
+                  }}
+                >
+                  Eliminar
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      
+        <Button variant="success" type="submit" className="mt-3">
+          {editingHistoryId ? 'Actualizar' : 'Agregar'}
+        </Button>
+      </Form>
+           
+            )}
+
+            <div>
+              <Button
+                variant="primary"
+                className="mt-3"
+                onClick={() => setIsVisible(!isVisible)}
+              >
+                {isVisible ? 'Cancelar' : 'Agregar'}
+              </Button>
+            </div>
+          </div>
+
           <Row className="gy-3">
             {empresaId.historias && empresaId.historias.length > 0 ? (
               empresaId.historias.map((historia) => (
@@ -170,7 +209,7 @@ const EmpresaId = () => {
                         variant="outline-primary"
                         size="sm"
                         className="me-2"
-                        onClick={() => handleEditHistory(historia._id, historia.activity)}
+                        onClick={() => handleEditHistory(historia._id, historia.activity, historia.tickets)}
                       >
                         Editar
                       </Button>
@@ -184,7 +223,7 @@ const EmpresaId = () => {
                       {historia.tickets && historia.tickets.length > 0 ? (
                         historia.tickets.map((ticket, index) => (
                           <Card.Text key={index} className="mt-2">
-                           <span style={{'fontWeight': 'bold'}}>Ticket {index+1}</span> {ticket.titulo}
+                            <span style={{ 'fontWeight': 'bold' }}>Ticket {index + 1}</span> {ticket}
                           </Card.Text>
                         ))
                       ) : (
@@ -202,9 +241,6 @@ const EmpresaId = () => {
       ) : (
         <p>No se encontró la empresa.</p>
       )}
-
-      
-
     </Container>
   );
 };

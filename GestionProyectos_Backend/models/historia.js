@@ -13,11 +13,10 @@ const historiaSchema = new mongoose.Schema({
        ref: 'Empresa',
        required: true
    },
-   tickets: [{
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Ticket' 
-   }]
-
+   tickets: {
+    type: [String],
+    default: []
+   }
 })
 
 
